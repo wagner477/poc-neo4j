@@ -1,0 +1,174 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PriceRatingEnum {
+  VERY_CHEAP
+  CHEAP
+  FAIR
+  EXPENSIVE
+  VERY_EXPENSIVE
+}
+
+enum RegulationTypeEnum {
+  PDF
+  TEXT
+}
+
+enum BillingType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+enum OfferTypeEnum {
+  ORGANIC
+  INORGANIC
+}
+
+enum CityEnum {
+  SAO_PAULO
+  RIO_DE_JANEIRO
+  BELO_HORIZONTE
+  BRASILIA
+  CURITIBA
+  PORTO_ALEGRE
+  RECIFE
+  SALVADOR
+  FORTALEZA
+  MANAUS
+  CAMPINAS
+}
+
+enum MaritalStatusEnum {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+}
+
+model User {
+  id            String            @id @default(uuid())
+  gender        String
+  age           Int
+  sign          String
+  city          CityEnum
+  maritalStatus MaritalStatusEnum
+  birthDate     DateTime
+
+  createdAt   DateTime      @default(now())
+  name        String
+  email       String
+  UserCluster UserCluster[]
+}
+
+model Offer {
+  id String @id @default(uuid())
+
+  title                     String
+  about                     String
+  website                   String
+  institutionalWebsite      String?
+  logo                      String?
+  banner                    String?
+  b2bImage                  String?
+  photos                    String[]
+  priceRating               PriceRatingEnum
+  giftbackCustomers         Int[]
+  discountPercentage        Int
+  considerBonuses           Boolean             @default(false)
+  agesActivated             Boolean             @default(false)
+  bonusesQuantityLimit      Int                 @default(0)
+  daysBetweenBonuses        Int                 @default(0)
+  maxAge                    Int?                @default(130)
+  minAge                    Int?                @default(1)
+  status                    Boolean             @default(false)
+  smsText                   String?
+  pushText                  String?
+  smsTextEcommerce          String?
+  pushTextEcommerce         String?
+  highlightGiftbackCustomer Int?
+  order                     Int?
+  visible                   Boolean             @default(true)
+  regulation                String?
+  regulationType            RegulationTypeEnum?
+  isPaid                    Boolean             @default(false)
+  billingType               BillingType?
+  offerValue                Float?
+  type                      OfferTypeEnum       @default(ORGANIC)
+
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime?      @updatedAt
+  ClusterOffer ClusterOffer[]
+
+  @@index([title])
+  @@index([priceRating])
+  @@index([status])
+  @@index([order])
+  @@index([discountPercentage])
+  @@index([visible])
+  @@index([status, visible])
+  @@index([status, visible, order])
+  @@index([website])
+  @@index([giftbackCustomers])
+  @@index([photos])
+  @@index([maxAge])
+  @@index([discountPercentage, giftbackCustomers])
+  @@index([discountPercentage, giftbackCustomers, status])
+  @@index([discountPercentage, giftbackCustomers, status, visible])
+}
+
+model Cluster {
+  id   String @id @default(uuid())
+  name String
+
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime?      @updatedAt
+  UserCluster  UserCluster[]
+  ClusterOffer ClusterOffer[]
+
+  @@index([id])
+}
+
+model ClusterOffer {
+  id String @id @default(uuid())
+
+  clusterId String
+  offerId   String
+  visible   Boolean @default(true)
+
+  cluster Cluster @relation(fields: [clusterId], references: [id])
+  offer   Offer   @relation(fields: [offerId], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  @@index([clusterId])
+  @@index([offerId])
+}
+
+model UserCluster {
+  id String @id @default(uuid())
+
+  userId    String
+  clusterId String
+
+  user    User    @relation(fields: [userId], references: [id])
+  cluster Cluster @relation(fields: [clusterId], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  @@index([userId])
+  @@index([clusterId])
+}
